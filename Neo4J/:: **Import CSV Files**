@@ -1,0 +1,237 @@
+// **Import CSV Files**
+
+// Character Nodes
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS csvline
+CREATE (:Character {id:toInteger(csvline.id), name: csvline.name});
+
+// Transcript Nodes
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+CREATE (:Transcript {lineno: toInteger(csvline.Line_Number), 
+					character: csvline.Character, 
+					line: csvline.Line, 
+					linelen: toInteger(csvline.Line_length), 
+					Cumulative_episode: toInteger(csvline.Cumulative_episode), 
+					Season: toInteger(csvline.Season), 
+					Episode_no: toInteger(csvline.Episode_no), 
+					Prev_char: csvline.Previous_Character, 
+					Next_char: csvline.Next_Character} )
+
+// Episode 1 Transcript
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/episode1.csv" as csvline
+CREATE (:EP1 {lineno: toInteger(csvline.Line_Number), 
+					character: csvline.Character, 
+					line: csvline.Line, 
+					linelen: toInteger(csvline.Line_length), 
+					Cumulative_episode: toInteger(csvline.Cumulative_episode), 
+					Season: toInteger(csvline.Season), 
+					Episode_no: toInteger(csvline.Episode_no), 
+					Prev_char: csvline.Previous_Character, 
+					Next_char: csvline.Next_Character} )
+
+
+
+// match Fry Character to Fry lines
+match (n: Character{name: 'Fry'})
+match (p: EP1{character: 'Fry'})
+create (n) -[:LINES]-> (p)
+
+//match Bender Character to Bender Lines
+match (n: Character{name: 'Bender'})
+match (p: EP1{character: 'Bender'})
+create (n) -[:LINES]-> (p)
+
+//match Leela's Lines
+match (n: Character{name: 'Leela'})
+match (p: EP1{character: 'Leela'})
+create (n) -[:LINES]-> (p)
+
+//match Farnsworth Lines
+match (n: Character{name: 'Farnsworth'})
+match (p: EP1{character: 'Farnsworth'})
+create (n) -[:LINES]-> (p)
+
+////// NEXT CHAR LINKS
+//** Links times when Fry spoke to Bender
+match (n:EP1{character: 'Fry'})
+WHERE n.Next_char = 'Bender'
+match (p: Character{name: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+//** :Links when Fry spoke to Leela
+match (n:EP1{character: 'Fry'})
+WHERE n.Next_char = 'Leela'
+match (p: Character{name: 'Leela'})
+create (n) -[:CONVERSE]-> (p)
+
+// Times Bender Spoke to Fry
+match (n:EP1{character: 'Bender'})
+WHERE n.Next_char = 'Fry'
+match (p: Character{name: 'Fry'})
+create (n) -[:CONVERSE]-> (p)
+
+// Times bender spoke to leela
+match (n:EP1{character: 'Bender'})
+WHERE n.Next_char = 'Leela'
+match (p: Character{name: 'Leela'})
+create (n) -[:CONVERSE]-> (p)
+
+// Leela spoke to fry
+match (n:EP1{character: 'Leela'})
+WHERE n.Next_char = 'Fry'
+match (p: Character{name: 'Fry'})
+create (n) -[:CONVERSE]-> (p)
+
+// Leela spoke to Bender
+match (n:EP1{character: 'Leela'})
+WHERE n.Next_char = 'Bender'
+match (p: Character{name: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+////// PREV CHAR LINKS
+//** Links times when Fry spoke to Bender
+match (n:EP1{character: 'Fry'})
+WHERE n.Prev_char = 'Bender'
+match (p: Character{name: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+//** :Links when Fry spoke to Leela
+match (n:EP1{character: 'Fry'})
+WHERE n.Prev_char = 'Leela'
+match (p: Character{name: 'Leela'})
+create (n) -[:CONVERSE]-> (p)
+
+// Times Bender Spoke to Fry
+match (n:EP1{character: 'Bender'})
+WHERE n.Prev_char = 'Fry'
+match (p: Character{name: 'Fry'})
+create (n) -[:CONVERSE]-> (p)
+
+// Times bender spoke to leela
+match (n:EP1{character: 'Bender'})
+WHERE n.Prev_char = 'Leela'
+match (p: Character{name: 'Leela'})
+create (n) -[:CONVERSE]-> (p)
+
+// Leela spoke to fry
+match (n:EP1{character: 'Leela'})
+WHERE n.Prev_char = 'Fry'
+match (p: Character{name: 'Fry'})
+create (n) -[:CONVERSE]-> (p)
+
+// Leela spoke to Bender
+match (n:EP1{character: 'Leela'})
+WHERE n.Prev_char = 'Bender'
+match (p: Character{name: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+//////////
+//** Links times when Fry spoke to Farnsworth
+match (n:EP1{character: 'Fry'})
+WHERE n.Next_char = 'Farnsworth'
+match (p: Character{name: 'Farnsworth'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:EP1{character: 'Fry'})
+WHERE n.Prev_char = 'Farnsworth'
+match (p: Character{name: 'Farnsworth'})
+create (n) -[:CONVERSE]-> (p)
+
+// Bender spoke to Farnsworth
+match (n:EP1{character: 'Bender'})
+WHERE n.Next_char = 'Farnsworth'
+match (p: Character{name: 'Farnsworth'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:EP1{character: 'Bender'})
+WHERE n.Prev_char = 'Farnsworth'
+match (p: Character{name: 'Farnsworth'})
+create (n) -[:CONVERSE]-> (p)
+
+// Leela to Farnsworth
+match (n:EP1{character: 'Leela'})
+WHERE n.Next_char = 'Farnsworth'
+match (p: Character{name: 'Farnsworth'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:EP1{character: 'Leela'})
+WHERE n.Prev_char = 'Farnsworth'
+match (p: Character{name: 'Farnsworth'})
+create (n) -[:CONVERSE]-> (p)
+
+//Farnsworth to Fry
+match (n:EP1{character: 'Farnsworth'})
+WHERE n.Next_char = 'Fry'
+match (p: Character{name: 'Fry'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:EP1{character: 'Farnsworth'})
+WHERE n.Prev_char = 'Fry'
+match (p: Character{name: 'Fry'})
+create (n) -[:CONVERSE]-> (p)
+
+//Farnsworth to Bender
+match (n:EP1{character: 'Farnsworth'})
+WHERE n.Next_char = 'Bender'
+match (p: Character{name: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:EP1{character: 'Farnsworth'})
+WHERE n.Prev_char = 'Bender'
+match (p: Character{name: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+//Farnsworth to Leela
+match (n:EP1{character: 'Farnsworth'})
+WHERE n.Next_char = 'Leela'
+match (p: Character{name: 'Leela'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:EP1{character: 'Farnsworth'})
+WHERE n.Prev_char = 'Leela'
+match (p: Character{name: 'Leela'})
+create (n) -[:CONVERSE]-> (p)
+
+
+
+
+
+// **Step 1: Link Character Node to Transcript where Transcipt.Character == Character.name
+
+//Matches frys lines to Character Fry
+match (n: Character{name: 'Fry'})
+match (p: Transcript{character: 'Fry'})
+create (n) -[:LINES]-> (p)
+
+match (n: Character{name: 'Bender'})
+match (p: Transcript{character: 'Bender'})
+create (n) -[:LINES]-> (p)
+
+//** Links times when Fry spoke to Bender
+match (n:Transcript{character: 'Fry'})
+match (p: Transcript{Next_char: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+
+
+
+
+
+/// make a relationship of everyone fry spoke to!!
+match (n:Character{name: 'Fry'})
+match (p: Transcript{Next_char: 'Bender'})
+create (n) -[:CONVERSE]-> (p)
+
+match (n:Character, (d:Transcript{character})
+create(n) -[r:LINES]-> (d) 
+
+match (n:Character{name:'Leela'}), (d:Transcript{character:'Leela'})
+match (n:Character{name:'Transcript.character), (d:Transcript{character:'Fry'})
+create(n) -[r:LINES]-> (d) 
+
+
+
+//** Trying to match everyone who shares an episode
+match (n: Transcript)

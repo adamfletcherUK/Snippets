@@ -1,0 +1,46 @@
+** Co occurance Network **
+
+// Character Nodes
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS csvline
+CREATE (:Character {id:toInteger(csvline.id), name: csvline.name});
+
+// Co occurance Network
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/co_occurence_map.csv" as csvline
+CREATE (:Cooccur {ID: toInteger(csvline.ID),
+					Name: csvline.Name,
+					toAmy: toInteger(csvline.Amy), 
+					toBender: toInteger(csvline.Bender),
+					toFarnsworth: toInteger(csvline.Farnsworth),
+					toFry: toInteger(csvline.Fry),
+					toHermes: toInteger(csvline.Hermes),
+					toLeela: toInteger(csvline.Leela),
+					toZapp: toInteger(csvline.Zapp),
+					toZoidberg: toInteger(csvline.Zoidberg)} )   
+
+
+
+
+// Step 1: Link Co-occurance to Character
+match (n: Character{name: 'Amy'})
+match (p: Cooccur{Name: 'Amy'})
+create (n) -[:CHARACTER]-> (p)
+
+match (n: Character{name: 'Bender'})
+match (p: Cooccur{Name: 'Bender'})
+create (n) -[:CHARACTER]-> (p)
+
+match (n: Cooccur{toBender} where Character{name: 'Amy'})
+match (p: Character{name: 'Bender'})
+create (n) -[:COOCCURANCE]-> (p)
+
+MATCH (p:Cooccur) WITH DISTINCT keys(p) AS keys
+UNWIND keys AS keyslisting WITH DISTINCT keyslisting AS allfields
+RETURN allfields;
+
+MATCH (n:Coccur{Name: 'Amy'}) WITH keys(p: "toBender") as keys
+MATCH (p: Character{name: 'Bender'})
+create (keys) -[:COOCCURANCE]-> (p)
+
+MATCH (p:Coccur) RETURN keys(p)

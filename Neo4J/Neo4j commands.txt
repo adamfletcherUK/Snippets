@@ -1,0 +1,217 @@
+
+# Import the csv file as an SQL database
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+create (p: Futurama {lineno: toInteger(csvline.Line_Number), character: csvline.Character, line: csvline.Line, linelen: toInteger(csvline.Line_length)} )
+
+# displays the nodes for the 5 events with the largest linelen
+MATCH (n) WHERE EXISTS(n.linelen) RETURN (n) order by n.linelen desc limit 5
+
+# returns the 25 longest lines in the db with character name and the line
+match (n)
+return n.character, n.line, n.linelen
+order by n.linelen desc limit 25
+
+# Returns a list of characters going reverse alphabetically
+START n=node(*)
+RETURN DISTINCT n.character
+ORDER BY n.character DESC
+LIMIT 25
+
+# Returns the number of Lines Fry has
+match (n:Futurama {character: 'Fry'})
+return labels(n), n.character, count(*)
+
+# Returns list of characters with the most lines
+match (n:Futurama)
+return  n.character, count(*)
+order by count(*) desc
+limit 25
+
+
+
+match (n:Futurama)
+return  n.character, n.line, count(*)
+order by count(*) desc
+limit 25
+
+
+####################
+
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+create (p: Futurama {lineno: toInteger(csvline.Line_Number), character: csvline.Character, line: csvline.Line, linelen: toInteger(csvline.Line_length), Cumulative_episode: toInteger(csvline.Cumulative_episode), Season: toInteger(csvline.Season), Episode_no: toInteger(csvline.Episode_no), Previous_char: csvline.Previous_Character, Next_char: csvline.Next_Character} )
+
+
+
+
+
+# Import the csv file as an SQL database
+load csv with headers from "https://github.com/adamfletcherUK/Rscripts/blob/master/futurama_test.csv" as csvline
+create (p: Futurama {lineno: toInteger(csvline.Line_Number), character: csvline.Character, line: csvline.Line, linelen: toInteger(csvline.Line_length)} )
+
+#####################
+
+
+
+
+
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/test_interactions.csv" as csvline
+create ( :Futurama {character: csvline.Character,
+                     interactions: csvline.Interactions,
+                     no_interactions: toInteger(csvline.No_Interactions)} )
+CREATE INDEX ON :Futurama(character);
+MATCH (c:Futurama {character: row.character})
+MATCH (nc:Futurama {interactions: row.interactions})
+MERGE (c)-[:NEXT-CHAR]->(nc)
+
+
+######################################
+
+Wolfs Scripts
+
+Option 1: 2 Files
+
+characters.csv
+
+1,Fry
+2.Leela
+3,Bender
+
+etc etc
+
+
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS csvline
+MERGE ( :Character {
+                    id: toInt(csvline.id),
+                    name: csvline.name
+                   });
+
+
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+
+MATCH (c:Character {name: csvline.Character}), (n:Character {name: csvline.Next_char})
+CREATE (c)-[:NEXT]->(n)
+
+MATCH (c:Character {name: csvline.Character}), (p:Character {name: csvline.Prev_char})
+CREATE (c)-[:PREV]->(p);
+
+
+
+#############################
+
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS csvline
+CREATE (:Character {id:toInteger(csvline.id), name: csvline.name});
+
+
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+CREATE (:Transcript {lineno: toInteger(csvline.Line_Number), 
+					character: csvline.Character, 
+					line: csvline.Line, 
+					linelen: toInteger(csvline.Line_length), 
+					Cumulative_episode: toInteger(csvline.Cumulative_episode), 
+					Season: toInteger(csvline.Season), 
+					Episode_no: toInteger(csvline.Episode_no), 
+					Prev_char: csvline.Previous_Character, 
+					Next_char: csvline.Next_Character} )
+
+match (n:Character{name:'Fry'}), (d:Transcript{character:'Leela'})
+create(n) -[r:FRIEND]-> (d)
+
+
+
+
+
+
+
+WITH :Character, :Transcript 
+MATCH (c:Character {name: Character.name}), (n:Transcript {name: Transcript.character})
+CREATE (c)-[:NEXT]->(n)
+
+MATCH (c:Character {name: csvline.Character}), (p:Character {name: csvline.Prev_char})
+CREATE (c)-[:PREV]->(p);
+
+
+
+
+
+
+
+############
+
+# Makes a link everytime Fry and Leela Talk
+match (n:Character{name:'Fry'}), (d:Transcript{character:'Leela'})
+create(n) -[r:FRIEND]-> (d)
+return r,n,d
+
+
+
+
+
+
+
+
+
+
+
+
+
+USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" AS csvline
+CREATE (:Transcript {lineno: toInteger(csvline.Line_Number), 
+					character: csvline.Character, 
+					line: csvline.Line, 
+					linelen: toInteger(csvline.Line_length), 
+					Cumulative_episode: toInteger(csvline.Cumulative_episode), 
+					Season: toInteger(csvline.Season), 
+					Episode_no: toInteger(csvline.Episode_no), 
+					Prev_char: csvline.Previous_Character, 
+					Next_char: csvline.Next_Character} )
+
+WITH 
+MATCH (n: Transcript{character}), (d: Transcript{Prev_char})
+MERGE(n) <-[r:CONVERSATION]-> (d)
+ON MATCH SET r.count = r.count + 1 ON CREATE SET r.count = 1
+
+
+RETURN r, n, d
+
+
+
+
+
+
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS chars
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" AS csvline
+CREATE (:Cha)
+
+
+
+
+
+
+
+
+
+
+
+
+MATCH (n: Interactions{csvline.Character), (d: Interactions{csvline.Previous_Character})
+
+
+MATCH (a: Character.), (b: Transcript)
+WHERE a.id = b.character
+CREATE (a)-[r:PREV]->(b)
+RETURN type(r)
+
+
+MATCH (c: character {name: csvline.Character}), (n: prev_char {name: csvline.Previous_char})
+CREATE (a)-[:PREV]->(b)
+RETURN 
+
+
+
+

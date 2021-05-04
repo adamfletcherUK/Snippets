@@ -1,0 +1,116 @@
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS csvline
+CREATE (:Character {id:toInteger(csvline.id), name: csvline.name});
+
+
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+CREATE (:Transcript {lineno: toInteger(csvline.Line_Number),
+                                        character: csvline.Character,
+                                        line: csvline.Line,
+                                        linelen: toInteger(csvline.Line_length),
+                                        Cumulative_episode: toInteger(csvline.Cumulative_episode),
+                                        Season: toInteger(csvline.Season),
+                                        Episode_no: toInteger(csvline.Episode_no),
+                                        Prev_char: csvline.Previous_Character,
+                                        Next_char: csvline.Next_Character} )
+WITH (:Transcript)
+MATCH (n: Character {name: csvline.Character}) -[n1:NOMINATED]-> (c: prev_char{name: csvline.Prev_char})
+RETURN n1
+
+
+
+
+
+
+
+USING PERIODIC COMMIT
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Futurama_characters.csv" AS characters
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as transcript
+WITH characters, transcript
+MATCH (uf :characters {name: "Fry"}) (u: Lines {transcript: transcript.line})
+CREATE (uf) -[:SAID]-> (u)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MATCH (c :Character { name: csvline.Character }) 
+MATCH (n :Character { name: csvline.Next_char })
+MERGE c -[r :FRIEND]-> n
+ON MATCH SET r.count = r.count + 1 ON CREATE SET r.count = 1
+
+
+
+
+
+USING PERIODIC COMMIT
+load csv with headers from "https://raw.githubusercontent.com/adamfletcherUK/Rscripts/master/Cleaned_transcript.csv" as csvline
+MERGE (:Transcript {lineno: toInteger(csvline.Line_Number),
+                                        character: csvline.Character,
+                                        line: csvline.Line,
+                                        linelen: toInteger(csvline.Line_length),
+                                        Cumulative_episode: toInteger(csvline.Cumulative_episode),
+                                        Season: toInteger(csvline.Season),
+                                        Episode_no: toInteger(csvline.Episode_no),
+                                        Prev_char: csvline.Previous_Character,
+                                        Next_char: csvline.Next_Character} )
+
+
+
+
+
+MATCH (uf :USER { twitter_name: toInt(csvLine.Character) })
+MATCH (u :USER { twitter_name: toInt(csvLine.Previous_Character) })
+MERGE uf -[:FOLLOWS]-> u
+
+
+
+WHERE character IS NOT NULL
+MERGE (u :USER { seat: seat, firstname: firstname, lastname: lastname, party: party, region: region,
+type: type, twitterid: twitterid })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM “file://blabla.csv” AS csvLine
+MATCH (uf :USER { twitter_name: toInt(csvLine.follower_name) })
+MATCH (u :USER { twitter_name: toInt(csvLine.twitter_name) })
+MERGE uf -[:FOLLOWS]-> u
+
+
+
+
+MATCH (c :Character { name: Transcript.Character }) 
+MATCH (n :Character { name: Transcript.Next_char })
+MERGE c -[r :FRIEND]-> n
+ON MATCH SET r.count = r.count + 1 ON CREATE SET r.count = 1
