@@ -1,0 +1,13 @@
+---
+title: "SCLC Data Test"
+author: "Adam Fletcher"
+date: "14/12/2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(TCGAbiolinks)
+
+```
+

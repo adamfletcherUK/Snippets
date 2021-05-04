@@ -1,0 +1,5 @@
+"","genetic_profile_id","genetic_profile_name","genetic_profile_description","cancer_study_id","genetic_alteration_type","show_profile_in_analysis_tab"
+"1","","","","","",""
+"2","sclc_clcgp_mutations","Mutations","Somatic mutations from exome sequencing of 29 tumor/normal pairs.","128","MUTATION_EXTENDED","true"
+"3","sclc_jhu_mutations","Mutations","Somatic mutations from exome sequencing of 42 tumor/normal pairs.","332","MUTATION_EXTENDED","true"
+"4","sclc_ucologne_2015_mutations","Mutations","Mutation data from whole genome sequencing of 110 human small cell lung cancer(SCLC) specimens.","201","MUTATION_EXTENDED","true"

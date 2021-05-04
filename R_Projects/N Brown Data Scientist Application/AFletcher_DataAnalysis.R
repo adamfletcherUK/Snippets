@@ -1,0 +1,407 @@
+#### N Brown Data Science Case Study ####
+#### 08NOV18
+#### Adam Fletcher
+#### Prerequisites and Data Import ####
+
+## Install/ Load Packages ##
+## **NOTE: The following code installs/loads packages on the users computer** ##
+requiredPackages <- c("tidyverse", "randomForest", "caret", "caTools")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(requiredPackages)
+
+#Import train dataset
+train_df <- read_csv("uc_data_train.csv")
+# Print number of missing rows in each column of df
+for (i in 1:ncol(train_df)){print(sum(is.na(train_df$i)))} # No missing data in train_df
+
+category_table <- as.data.frame(apply(train_df,2,function(x) length(unique(x))))
+# The following variables are categorical: size_womenswear, first_order_channel, socioeconomic_status, 
+#                                          size_corsetry_cup, size_corsetry_briefs, size_footwear, brand, 
+#                                          socioeconomic_desc, order_method
+
+#### Checking distribution of data ####
+density_plotter <- function(test_variable){
+  density_plot <-ggplot(train_df, aes(x=test_variable))+
+    geom_density()
+  return(density_plot)
+}
+density_plotter(train_df$size_womenswear) #Move in intervals of 4, skewed towards left
+density_plotter(train_df$total_number_of_orders) #Majority of people order <50 timess
+density_plotter(train_df$first_order_channel) #Boolean 1 or 2
+density_plotter(train_df$socioeconomic_status)
+density_plotter(train_df$size_corsetry_cup) # Intergers
+density_plotter(train_df$size_corsetry_briefs) #Intervals of 4, normal distribution
+density_plotter(train_df$size_footware) #Integer, normally distributed
+density_plotter(train_df$days_since_first_order)
+density_plotter(train_df$brand) #Majority Brand 1. Brands 2 = 3 = other
+density_plotter(train_df$age_in_years)
+density_plotter(train_df$socioeconomic_desc)
+density_plotter(train_df$order_method) #Majority of purchasing online
+
+#### Figure: Size Womenswear Histogram ####
+ggplot(data = train_df, aes(x= size_womenswear, y= ..density..)) +
+  geom_histogram(binwidth = 4, colour = "black", fill= "light blue") +
+  geom_density(adjust=4) +
+  scale_x_continuous(breaks = c(8,12,16,20,24,28,32,36)) +
+  labs(title = 'Distribution of Size Womenswear') +
+  xlab('Size Womenswear') +
+  ylab('Density') +
+  theme(plot.title= element_text(size = 42),
+        axis.title = element_text(size = 38),
+        axis.text = element_text(size = 32),
+        strip.text.y = element_text(size = 38)) +
+  theme_bw()
+
+#Size Corsetry Cup Histogram
+ggplot(data = train_df, aes(x= size_corsetry_cup, y= ..density..)) +
+  geom_histogram(binwidth = 1, colour = "black", fill= "light green") +
+  scale_x_continuous(breaks = c(2,3,4,5,6,7,8,9)) +
+  labs(title = 'B: Distribution of Size Corsetry Cup') +
+  xlab('Size Corsetry Cup') +
+  ylab('Density') +
+  theme_bw()
+
+#Size Corsetry Briefs Histogram
+ggplot(data = train_df, aes(x= size_corsetry_briefs, y= ..density..)) +
+  geom_histogram(binwidth = 4, colour = "black", fill= "salmon 1") +
+  scale_x_continuous(breaks = c(8,16,24,32,40,48)) +
+  labs(title = 'C: Distribution of Size Corsetry Briefs') +
+  xlab('Size Corsetry Briefs') +
+  ylab('Density') +
+  theme_bw()
+
+#Size Age Histogram
+ggplot(data = train_df, aes(x= age_in_years, y= ..density..)) +
+  geom_histogram(colour = "black", fill= "gold 1") +
+  geom_density() +
+  scale_x_continuous(breaks = c(15, 25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125)) +
+  labs(title = 'D: Distribution of Age in Years') +
+  xlab('Age (Years)') +
+  ylab('Density') +
+  theme_bw()
+
+#### Function: Correlation Plotter #####
+corrPlotter <- function(test_var, yAxisFactor, varBreaks, varLimit, graphTitle, xAxisTitle, yAxisFactorString){
+  correlation<- cor(x= train_df$size_womenswear, y= test_var, method = "spearman")
+  
+  summary_plot <- ggplot(data = train_df)  +
+    geom_density(mapping = aes(x= test_var, 
+                               y= ..count../yAxisFactor, 
+                               fill = factor(size_womenswear)),
+                 alpha= 0.5,
+                 adjust = 4) +
+    geom_density(mapping = aes(x= test_var, 
+                               y= ..count../yAxisFactor),
+                 adjust = 4)+
+    scale_x_continuous(breaks = varBreaks, limits = varLimit) +
+    scale_fill_discrete(name = 'Womenswear Size') +
+    guides(alpha=FALSE) +
+    labs(title = graphTitle, subtitle = paste('Spearmans Rank:', round(correlation, 3), sep = " ")) +
+    xlab(xAxisTitle) +
+    ylab(paste('Count (', yAxisFactorString, ')', sep = "")) +
+    theme_bw() +
+    theme(legend.position = 'bottom',
+          legend.text = element_text(size = 20),
+          plot.title= element_text(size = 26),
+          plot.subtitle = element_text(size = 24),
+          axis.title = element_text(size = 24),
+          axis.text = element_text(size = 20),
+          strip.text.y = element_text(size = 24))
+  return(summary_plot)
+} 
+
+#### Correlation: size and coresety briefs ####
+#As Table
+summary_train_df <- train_df %>%
+  group_by(size_womenswear, size_corsetry_briefs) %>%
+  group_by(total = n(), add= TRUE) %>%
+  summarise()
+
+#### Figure: Correlation womenswear size against corestry briefs ####
+corrPlotter(train_df$size_corsetry_briefs, 
+            1000, 
+            c(4,8,12,16,20,24,28,32,36,38), 
+            c(4, 38), 
+            'A: Correlation of Womenswear Size against Corsetry Briefs Size', 
+            'Size Corsetry Briefs', 
+            'Thousands')
+
+#Second Method Spearmans Rank
+cor.test( ~ size_womenswear + size_corsetry_briefs, 
+          data=train_df,
+          method = "spearman",
+          continuity = FALSE,
+          conf.level = 0.95) # P= <2.2e-16
+
+
+#### Correlation: size and coresety cup ####
+#As Table
+summary_train_df <- train_df %>%
+  group_by(size_womenswear, size_corsetry_cup) %>%
+  group_by(total = n(), add= TRUE) %>%
+  filter(size_womenswear == 12) %>%
+  summary()
+
+#### Figure: Correlation womenswear size against corestry cup ####
+corrPlotter(train_df$size_corsetry_cup, 
+            100, 
+            c(2,3,4,5,6,7,8,9), 
+            c(2, 9), 
+            'B: Correlation of Womenswear Size against Corsetry Cup Size', 
+            'Size Corsetry Cup', 
+            'Hundreds')
+
+#### Correlation: womenswear size and footware size ####
+
+#As Table
+summary_train_df <- train_df %>%
+  group_by(size_womenswear, size_footware) %>%
+  group_by(total = n(), add= TRUE) %>%
+  filter(size_womenswear == 12) %>%
+  summary()
+
+#### Figure: Correlation womenswear size against Footware Size ####
+corrPlotter(train_df$size_footware, 
+            100, 
+            c(2:12), 
+            c(2, 12), 
+            'C: Correlation of Womenswear Size against Footware Size', 
+            'Footware Size', 
+            'Hundreds')
+
+#### Correlation: womenswear size and Age in Years ####
+#As Table
+summary_train_df <- train_df %>%
+  group_by(size_womenswear, age_in_years) %>%
+  group_by(total = n(), add= TRUE) %>%
+  summarise()
+
+# Facetwrap density
+summary_plot <- ggplot(data = train_df)  +
+  geom_density(mapping = aes(x= age_in_years, y= ..count../1000 , fill = - size_womenswear)) +
+  #scale_x_continuous(breaks = c(4:10), limits = c(4, 10)) +
+  facet_wrap(~ size_womenswear, nrow = 8, strip.position="right") +
+  guides(fill=FALSE) +
+  labs(title = 'Correlation of Womenswear Size against Age') +
+  xlab(paste('Age (Years)                                 Spearmans Rank:', round(correlation, 3), sep = " ")) +
+  ylab('Count (Thousands)') +
+  theme_bw() +
+  theme(plot.title= element_text(size = 26), 
+        axis.title = element_text(size = 24), 
+        axis.text = element_text(size = 20),
+        strip.text.y = element_text(size = 24))
+summary_plot
+
+#### Figure: Correlation womenswear size against Age in Years ####
+corrPlotter(train_df$age_in_years, 
+            100, 
+            c(20,40, 60,80, 100), 
+            c(20, 100), 
+            'D: Correlation of Womenswear Size against Age', 
+            'Age (Years)', 
+            'Hundreds') #The adjust setting might be oversmoothing data
+
+
+# Manually performing plo
+correlation<- cor(x= train_df$size_womenswear, y= train_df$age_in_years, method = "spearman")
+summary_plot <- ggplot(data = train_df)  +
+  geom_density(mapping = aes(x= age_in_years, 
+                             y= ..count../100, 
+                             fill = factor(size_womenswear)),
+               alpha= 0.5,
+               adjust = 1) +
+  geom_density(mapping = aes(x= age_in_years, 
+                             y= ..count../100),
+               adjust = 1)+
+  scale_x_continuous(breaks = c(20,40, 60,80, 100), limits = c(20, 100)) +
+  scale_fill_discrete(name = 'Womenswear Size') +
+  guides(alpha=FALSE) +
+  labs(title = 'D: Correlation of Womenswear Size against Age', subtitle = paste('Spearmans Rank:', round(correlation, 3), sep = " ")) +
+  xlab('Age (Years)') +
+  ylab(paste('Count (Hundreds')) +
+  theme_bw() +
+  theme(legend.position = 'bottom',
+        legend.text = element_text(size = 20),
+        plot.title= element_text(size = 26),
+        plot.subtitle = element_text(size = 24),
+        axis.title = element_text(size = 24),
+        axis.text = element_text(size = 20),
+        strip.text.y = element_text(size = 24))
+summary_plot #removing smoothing shows that dress size increases with age after 60
+
+
+
+#As boxplot
+ggplot(data = train_df, mapping = aes(x= size_womenswear, y= age_in_years, group= size_womenswear)) +
+  geom_boxplot() +
+  coord_flip()+
+  theme_bw()
+# There is an increase in age with dress sizes over 32. However groupsize is only 11. 
+correlation<- cor(x= train_df$size_womenswear, y= train_df$age_in_years, method = "spearman")
+# Spearmans Rank: -0.054
+
+#### Multifactoral Testing: Corsetry Briefs and Footware Sizes ####
+ggplot(data = train_df) +
+  geom_jitter(mapping = aes(x= size_womenswear, y=size_corsetry_briefs, colour = factor(size_footware))) +
+  geom_abline(slope=1, intercept=0) +
+  xlab('Womenswear Size') +
+  ylab('Corsetry Briefs Size') +
+  labs(title = 'Correlation Between Womenswear size, Corsetry Briefs and Footwear sizes') +
+  theme(legend.position = 'bottom',
+        legend.text = element_text(size = 32),
+        plot.title= element_text(size = 48),
+        plot.subtitle = element_text(size = 42),
+        axis.title = element_text(size = 42),
+        axis.text = element_text(size = 38),
+        strip.text.y = element_text(size = 42))
+  theme_bw()
+
+#### Making Categorical Variables ####
+
+str(train_df) # Many of the variables are categorical but have been imported as integers
+# convert to categorical variable
+train_df$size_womenswear = as.factor(train_df$size_womenswear)
+train_df$first_order_channel = as.factor(train_df$first_order_channel)
+train_df$socioeconomic_status = as.factor(train_df$socioeconomic_status)
+train_df$size_corsetry_cup = as.factor(train_df$size_corsetry_cup)
+train_df$size_corsetry_briefs = as.factor(train_df$size_corsetry_briefs)
+train_df$size_footware = as.factor(train_df$size_footware)
+train_df$brand = as.factor(train_df$brand)
+train_df$socioeconomic_desc = as.factor(train_df$socioeconomic_desc)
+train_df$order_method = as.factor(train_df$order_method)
+str(train_df)
+
+# Make bins for age to use a categorical variable
+train_df$agebins <- cut(train_df$age_in_years, breaks = seq(0, 120, by = 5))
+
+#### Random Forest Precition of size_womenswear ####
+
+# Set seed for RF normalisation
+set.seed(123)
+
+# Testing variable combinations to tune model
+cleaned_df <- train_df[,c(3,9,10)] #OOB - 30.7%, Accuracy= 69%, bestmtry=1
+#cleaned_df <- train_df[,c(3,9,13,14)] #OOB - 30.7%, Accuracy= 69%, bestmtry=1
+#cleaned_df <-train_df #OOB - 32.2%, Accuracy= 68.6%, bestmtry=4
+#train_df[,c(3,9)] #OOB - 30.73%, Accuracy= 69%, bestmtry = 1
+#train_df[,c(3,9,13)] #OOB - 30.7%, Accuracy= 69%, bestmtry=1
+#train_df[,c(3,9,13,14)] #OOB - 30.7%, Accuracy= 69%, bestmtry=1
+
+# split cleaned_df into randomForest train (70%) and validation datasets (30%)
+ind= sample.split(Y= cleaned_df$size_womenswear, SplitRatio = 0.7)
+rf_train_df <- cleaned_df[ind,]
+rf_validate_df <- cleaned_df[!ind,]
+
+# Find the best mtry
+tuneRF(rf_train_df, rf_train_df$size_womenswear, 
+                   ntreeTry = 500, stepFactor = 0.5, 
+                   improve = 0.01, trace = T, plot = T)
+
+# Generate Random Forest Model
+modelRandom <- randomForest(size_womenswear~.,data = rf_train_df, mtry=2, ntree=500) #. means use all other variables to predict low
+modelRandom #OOB (misclassification rate = 31.1%) (Bad at categorising sizes 12-28)
+
+# Which variables are important
+importance(modelRandom)
+varImpPlot(modelRandom)
+
+PredictionsWithClass <- predict(modelRandom, rf_validate_df, type ='class')
+t <- table(predictions= PredictionsWithClass, actual=rf_validate_df$size_womenswear)
+t
+
+#### Calculating the Accuracy of the Model ####
+sum(diag(t)/sum(t)) #Quick Calculation
+
+# Accuracy of the model against the training dataset
+predictionTraining <- predict(modelRandom, rf_train_df)
+confusionMatrix(predictionTraining, rf_train_df$size_womenswear) #Accuracy = 69.21%
+# Accuracy of the model against the validation dataset
+predictionValidation <- predict(modelRandom, rf_validate_df)
+confusionMatrix(predictionValidation, rf_validate_df$size_womenswear) #Accuracy = 69.47%
+
+#### Applying Model to Test Dataset #### 
+
+test_df <- read_csv("uc_data_test.csv")
+test_df$first_order_channel = as.factor(test_df$first_order_channel)
+test_df$socioeconomic_status = as.factor(test_df$socioeconomic_status)
+test_df$size_corsetry_cup = as.factor(test_df$size_corsetry_cup)
+test_df$size_corsetry_briefs = as.factor(test_df$size_corsetry_briefs)
+test_df$size_footware = as.factor(test_df$size_footware)
+test_df$brand = as.factor(test_df$brand)
+test_df$socioeconomic_desc = as.factor(test_df$socioeconomic_desc)
+test_df$order_method = as.factor(test_df$order_method)
+str(test_df)
+
+
+rf_test_df <- test_df[,c(8,9)]
+# Making sure the levels in the variables is the same between the training and test datasets
+levels(rf_train_df$size_corsetry_briefs)
+levels(rf_test_df$size_corsetry_briefs)
+levels(rf_train_df$size_footware)
+levels(rf_test_df$size_footware) # There are no size 17 customers in test dataset
+levels(rf_test_df$size_footware) <- levels(rf_train_df$size_footware)
+
+# Predict Womenswear size from Model
+test_size_womenswear <- predict(modelRandom, rf_test_df)
+
+# Bind to original test data and export
+test_df <- cbind(test_df, test_size_womenswear)
+colnames(test_df)[15] = "predicted_size_womenswear"
+write_csv(test_df, 'uc_data_test_AFletcher.csv')
+
+#### Misc: Statistics for Report ####
+
+#Percentage womenswear = 12 briefs = 16
+size_12_briefs_16 <- train_df %>%
+  filter(size_womenswear == 12) %>%
+  group_by(size_corsetry_briefs) %>%
+  group_by(total = n(), add= TRUE) %>%
+  summarise()
+pcent_brief_16 <-  (sum(size_12_briefs_16$total[c(3:11)])/sum(size_12_briefs_16$total))*100
+
+#Percentage womenswear = 16 briefs = 20
+size_16_briefs_20 <- train_df %>%
+  filter(size_womenswear == 16) %>%
+  group_by(size_corsetry_briefs) %>%
+  group_by(total = n(), add= TRUE) %>%
+  summarise()
+pcent_brief_20 <- (sum(size_16_briefs_20$total[c(4:11)])/sum(size_16_briefs_20$total))*100
+
+# Mode Age
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+modeage <- getmode(train_df$age_in_years)
+
+# Percentage womenswear > 24
+num_above_24 <- train_df %>%
+  filter(size_womenswear > 24) %>%
+  group_by(total = n(), add= TRUE) %>%
+  summarise()
+pcent_above_24 <- (num_above_24$total[1]/(nrow(train_df)-1))*100
+
+#Spearmans Rank: days_first_order vs womenswear size
+cor.test( ~ size_womenswear + days_since_first_order, 
+          data=train_df,
+          method = "spearman",
+          continuity = FALSE,
+          conf.level = 0.95) # P= <2.2e-16
+
+# Return rate for each size
+return_rate <- train_df
+return_rate$no_returns <- (return_rate$total_number_of_orders * return_rate$return_rate)
+return_summary <- return_rate %>%
+  group_by(size_womenswear) %>%
+  summarise(mean_no_returns = mean(no_returns),
+            mean_no_orders = mean(total_number_of_orders)
+  )
+return_summary$pcent_returns <- (return_summary$mean_no_returns / return_summary$mean_no_orders) * 100
+return_summary$acc_rate <- 100- return_summary$pcent_returns
+
+                                

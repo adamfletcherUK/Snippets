@@ -1,0 +1,2 @@
+"","genetic_profile_id","genetic_profile_name","genetic_profile_description","cancer_study_id","genetic_alteration_type","show_profile_in_analysis_tab"
+"1","sclc_clcgp_mutations","Mutations","Somatic mutations from exome sequencing of 29 tumor/normal pairs.",128,"MUTATION_EXTENDED","true"
