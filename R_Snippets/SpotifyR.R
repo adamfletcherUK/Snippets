@@ -13,8 +13,8 @@ ipak <- function(pkg){
 }
 ipak(requiredPackages)
 
-Sys.setenv(SPOTIFY_CLIENT_ID = '4f8d5156adaf46f4bfbeba3df1550238')
-Sys.setenv(SPOTIFY_CLIENT_SECRET = 'd992819b1d6040ecb6ce4611e854e33c')
+Sys.setenv(SPOTIFY_CLIENT_ID = 'XXXX')
+Sys.setenv(SPOTIFY_CLIENT_SECRET = 'XXXX')
 
 access_token <- get_spotify_access_token()
 
