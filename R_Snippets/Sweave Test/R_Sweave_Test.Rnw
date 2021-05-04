@@ -1,0 +1,14 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+whatduuppp
+
+```{r}
+print("Whatuuupp")
+```
+
+
+
+\end{document}

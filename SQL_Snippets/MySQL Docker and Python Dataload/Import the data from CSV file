@@ -1,0 +1,52 @@
+# Import the data from CSV file
+import pandas as pd
+
+contacts = pd.read_csv(
+  "/Users/adam/Documents/referals_data/mysql/data_import/contacts_csv.csv"
+)
+
+#contacts.to_sql(con = mydb,
+#                name ='test2')
+
+
+## TRYING PYMYSQL CONNECTION
+
+import pymysql
+conn = pymysql.connect(host = 'localhost',
+                       port = 3306,
+                       user = 'adam',
+                       passwd = 'password',
+                       db = 'testing',
+                       charset = 'utf8')
+
+contacts.to_sql(name='test2',
+                con=conn,
+                if_exists='replace')
+
+
+#query = cursor.execute('SELECT * FROM test2')
+#print(query)
+
+#cursor.execute('CREATE TABLE testing.test3 (contact_id, person, linkedin)')
+#cursor.commit()
+
+
+
+###
+
+
+CREATE TABLE IF NOT EXISTS testing.contacts_csv (
+    `Contact_ID` INT,
+    `Person` VARCHAR(21) CHARACTER SET utf8,
+    `linkedin` VARCHAR(53) CHARACTER SET utf8);
+
+
+
+ statement = ""
+for i in range(data_frame.shape[1]):
+    if data_frame.dtypes[i] == "object":
+        statement += "'{}'".format(data_frame.iloc[0,i])
+    else:
+        statement += data_frame.iloc[0,i]
+
+print(statement)

@@ -1,0 +1,81 @@
+
+#===== DOCKER CONTAINER SETUP ========
+
+## PULLING BASE DOCKER IMAGE:
+docker pull mysql/mysql-server:latest
+
+## RUNNING THE DOCKER CONTAINER:
+docker run --name=referals_db -d mysql/mysql-server:latest
+
+		## STOP AND REMOVE CONTAINER:
+		docker stop referals_db
+		docker rm referals_db
+
+		## FIND ROOT PASSWORD:
+		docker logs referals_db 2>&1 | grep GENERATED
+
+		##	[4PUMYtEs+epED@HutuRuRip3H,o
+
+## LOG INTO CONTAINER:
+docker exec -it referals_db mysql -uroot -p
+
+		## CHANGE ROOT PASSWORD:
+		ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';
+
+		## Changed it to password
+
+
+## CONTAINER SHELL ACCESS TO MYSQL CONTAINER:
+## Do in a new terminal session!
+docker exec -it referals_db bash 
+
+## RUNNING THE CONTAINER WITH A MOUNTED DIRECTORY:
+docker run --name=referals_db \
+--mount type=bind,src=/Users/adam/Documents/referals_data/my.cnf,dst=/etc/my.cnf \
+--mount type=bind,src=/Users/adam/Documents/referals_data/mysql,dst=/var/lib/mysql \
+-d mysql/mysql-server:latest
+
+		## PULLING DATA OUT OF ORIGINAL DOCKER CONTAINER FOR MOUNTING:
+		docker run --name=referals_db --mount \
+		type=bind,src=/Users/adam/Documents/referals_data,dst=/tmp \
+		-d mysql/mysql-server:latest
+
+				>>> CHANGE ROOT PASSWORD
+				ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';
+
+				## The password is now password everytime!!
+
+
+				>>> WHILE IN SHELL
+				cp /etc/my.cnf /tmp
+				cp -r /var/lib/mysql /tmp
+
+
+## FINAL DOCKERFILE PROMPT !!
+docker run --name=referals_db \
+-p 3306:3306 \
+--mount type=bind,src=/Users/adam/Documents/referals_data/my.cnf,dst=/etc/my.cnf \
+--mount type=bind,src=/Users/adam/Documents/referals_data/mysql,dst=/var/lib/mysql \
+-d mysql/mysql-server:latest
+
+
+
+#===== SETTING UP USER ACCOUNTS AND PRIVILEGES =====
+
+## CREATE A USER
+CREATE USER 'adam'@'%' IDENTIFIED BY 'password';
+grant all privileges on *.* to 'adam'@'%' with grant option;
+
+CREATE USER 'adam'@'171.17.0.1' IDENTIFIED BY 'password';
+## it was saying this address couldn't connect. So I added this also
+
+## GRANT ACCESS TO ALL DATABASES TO USERNAME: ADAM
+GRANT ALL PRIVILEGES ON *.* TO 'adam'@'%';
+
+
+
+#===== ACCESSING THE SQL DATABASE =====
+mysql -h localhost -P 3306 --protocol=tcp -u adam -p
+
+
+
